@@ -127,9 +127,25 @@ pub fn global_jvm() -> &'static JavaVM {
 }
 
 pub(crate) fn get_env() -> Result<JNIEnv<'static>, ::jni::errors::Error> {
+    log::debug!("[btleplug] get_env called");
     match global_jvm().get_env() {
-        Ok(env) => Ok(env),
-        Err(_) => global_jvm().attach_current_thread_permanently(),
+        Ok(env) => {
+            log::debug!("[btleplug] get_env: attached OK");
+            Ok(env)
+        }
+        Err(e) => {
+            log::warn!("[btleplug] get_env: thread detached, attaching permanently. err={e:?}");
+            match global_jvm().attach_current_thread_permanently() {
+                Ok(env) => {
+                    log::info!("[btleplug] get_env: attached permanently");
+                    Ok(env)
+                }
+                Err(e2) => {
+                    log::error!("[btleplug] get_env: attach_current_thread_permanently failed: {e2:?}");
+                    Err(e2)
+                }
+            }
+        }
     }
 }
 
