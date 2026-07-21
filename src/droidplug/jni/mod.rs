@@ -126,6 +126,13 @@ pub fn global_jvm() -> &'static JavaVM {
     )
 }
 
+pub(crate) fn get_env() -> Result<JNIEnv<'static>, ::jni::errors::Error> {
+    match global_jvm().get_env() {
+        Ok(env) => Ok(env),
+        Err(_) => global_jvm().attach_current_thread_permanently(),
+    }
+}
+
 impl From<::jni::errors::Error> for crate::Error {
     fn from(err: ::jni::errors::Error) -> Self {
         Self::Other(Box::new(err))

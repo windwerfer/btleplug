@@ -34,7 +34,7 @@ use std::{
 use uuid::Uuid;
 
 use super::jni::{
-    global_jvm,
+    get_env,
     objects::{JBluetoothGattCharacteristic, JBluetoothGattService, JPeripheral},
 };
 use jni::objects::JClass;
@@ -199,7 +199,7 @@ impl Peripheral {
     where
         E: From<::jni::errors::Error>,
     {
-        let env = global_jvm().get_env()?;
+        let env = get_env()?;
         let obj = JPeripheral::from_env(&env, self.internal.as_obj())?;
         f(&env, obj)
     }
@@ -411,7 +411,7 @@ impl api::Peripheral for Peripheral {
         let stream = stream
             .map(move |item| match item {
                 Ok(item) => {
-                    let env = global_jvm().get_env()?;
+                    let env = get_env()?;
                     let item = item.as_obj();
                     let characteristic = JBluetoothGattCharacteristic::from_env(&env, item)?;
                     let uuid = characteristic.get_uuid()?;
