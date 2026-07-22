@@ -1,7 +1,7 @@
 use super::jni_utils::exceptions::try_block;
 use super::{
     jni::{
-        global_jvm,
+        get_env,
         objects::{JScanFilter, JScanResult},
     },
     peripheral::{Peripheral, PeripheralId},
@@ -43,7 +43,7 @@ impl Debug for Adapter {
 
 impl Adapter {
     pub(crate) fn new() -> Result<Self> {
-        let env = global_jvm().get_env()?;
+        let env = get_env()?;
 
         let obj = env.new_object(
             "com/nonpolynomial/btleplug/android/impl/Adapter",
@@ -63,7 +63,7 @@ impl Adapter {
     pub fn report_scan_result(&self, scan_result: JObject) -> Result<Peripheral> {
         use std::convert::TryInto;
 
-        let env = global_jvm().get_env()?;
+        let env = get_env()?;
         let scan_result = JScanResult::from_env(&env, scan_result)?;
 
         let (addr, properties): (BDAddr, Option<PeripheralProperties>) = scan_result.try_into()?;
@@ -91,7 +91,7 @@ impl Adapter {
     }
 
     fn add(&self, address: BDAddr) -> Result<Peripheral> {
-        let env = global_jvm().get_env()?;
+        let env = get_env()?;
         let peripheral = Peripheral::new(&env, self.internal.as_obj(), address)?;
         self.manager.add_peripheral(peripheral.clone());
         Ok(peripheral)
@@ -139,15 +139,25 @@ impl Central for Adapter {
     }
 
     async fn start_scan(&self, filter: ScanFilter) -> Result<()> {
-        let env = global_jvm().get_env()?;
-        let filter = JScanFilter::new(&env, filter)?;
+        log::debug!("[btleplug] start_scan begin");
+        let env = get_env()?;
+        log::debug!("[btleplug] start_scan got env");
+        let jfilter = JScanFilter::new(&env, filter)?;
+        log::debug!("[btleplug] start_scan calling startScan via JNI");
         try_block(&env, || {
-            env.call_method(
+            log::debug!("[btleplug] start_scan try_block: calling call_method");
+            let result = env.call_method(
                 &self.internal,
                 "startScan",
                 "(Lcom/nonpolynomial/btleplug/android/impl/ScanFilter;)V",
-                &[filter.into()],
-            )?;
+                &[jfilter.into()],
+            );
+            if let Err(e) = &result {
+                log::error!("[btleplug] start_scan call_method error: {e:?}");
+            } else {
+                log::debug!("[btleplug] start_scan call_method OK");
+            }
+            result?;
             Ok(Ok(()))
         })
         .catch(
@@ -165,13 +175,14 @@ impl Central for Adapter {
                 .call_method(ex, "getMessage", "()Ljava/lang/String;", &[])?
                 .l()?;
             let msgstr: String = env.get_string(msg.into())?.into();
+            log::error!("[btleplug] start_scan RuntimeException: {msgstr}");
             Ok(Err(Error::RuntimeError(msgstr)))
         })
         .result()?
     }
 
     async fn stop_scan(&self) -> Result<()> {
-        let env = global_jvm().get_env()?;
+        let env = get_env()?;
         env.call_method(&self.internal, "stopScan", "()V", &[])?;
         Ok(())
     }

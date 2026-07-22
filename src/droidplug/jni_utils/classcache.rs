@@ -6,11 +6,9 @@ static CLASSCACHE: OnceCell<DashMap<String, GlobalRef>> = OnceCell::new();
 
 pub fn find_add_class(env: &JNIEnv, classname: &str) -> Result<()> {
     let cache = CLASSCACHE.get_or_init(|| DashMap::new());
-    cache.insert(
-        classname.to_owned(),
-        env.new_global_ref(env.find_class(classname).unwrap())
-            .unwrap(),
-    );
+    let class = env.find_class(classname)?;
+    let gref = env.new_global_ref(class)?;
+    cache.insert(classname.to_owned(), gref);
     Ok(())
 }
 
