@@ -41,7 +41,18 @@ impl<'a: 'b, 'b> JStream<'a, 'b> {
         })
     }
 
+    fn clear_java_exception(&self) {
+        if self.env.exception_check().unwrap_or(false) {
+            self.env.exception_describe().ok();
+            self.env.exception_clear().ok();
+        }
+    }
+
     fn j_poll_next(&self, waker: JObject<'a>) -> Result<Poll<Option<JObject<'a>>>> {
+        // If there's a stale Java exception from a previous call, clear it
+        // first so call_method_unchecked doesn't fail immediately.
+        self.clear_java_exception();
+
         let result = self
             .env
             .call_method_unchecked(
@@ -49,8 +60,21 @@ impl<'a: 'b, 'b> JStream<'a, 'b> {
                 self.poll_next,
                 JavaType::Object("io/github/gedgygedgy/rust/task/PollResult".to_string()),
                 &[waker.into()],
-            )?
-            .l()?;
+            );
+        let result = match result {
+            Ok(r) => r,
+            Err(e) => {
+                self.clear_java_exception();
+                return Err(e);
+            }
+        };
+        let result = match result.l() {
+            Ok(r) => r,
+            Err(e) => {
+                self.clear_java_exception();
+                return Err(e);
+            }
+        };
         let _auto_local = self.env.auto_local(result);
         Ok(if self.env.is_same_object(result, JObject::null())? {
             Poll::Pending
@@ -130,7 +154,7 @@ impl JSendStream {
         &self,
         context: &mut Context<'_>,
     ) -> Result<Poll<Option<Result<GlobalRef>>>> {
-        let env = self.vm.get_env()?;
+        let env = super::super::jni::get_env()?;
         let jstream = JStream::from_env(&env, self.internal.as_obj())?;
         jstream
             .poll_next_internal(context)

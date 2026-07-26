@@ -127,10 +127,10 @@ pub fn global_jvm() -> &'static JavaVM {
 }
 
 pub(crate) fn get_env() -> Result<JNIEnv<'static>, ::jni::errors::Error> {
-    log::debug!("[btleplug] get_env called");
+    log::trace!("[btleplug] get_env called");
     match global_jvm().get_env() {
         Ok(env) => {
-            log::debug!("[btleplug] get_env: attached OK");
+            log::trace!("[btleplug] get_env: attached OK");
             Ok(env)
         }
         Err(e) => {

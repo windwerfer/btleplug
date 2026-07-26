@@ -435,7 +435,15 @@ impl api::Peripheral for Peripheral {
                 }
                 Err(err) => Err(err),
             })
-            .filter_map(|item| async { item.ok() });
+            .filter_map(|item| async move {
+                match item {
+                    Ok(item) => Some(item),
+                    Err(err) => {
+                        log::warn!("[btleplug] notification stream error: {err:?}");
+                        None
+                    }
+                }
+            });
         Ok(Box::pin(stream))
     }
 
