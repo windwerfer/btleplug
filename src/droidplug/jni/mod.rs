@@ -144,7 +144,9 @@ pub(crate) fn get_env() -> Result<JNIEnv<'static>, ::jni::errors::Error> {
                     Ok(env)
                 }
                 Err(e2) => {
-                    log::error!("[btleplug] get_env: attach_current_thread_permanently failed: {e2:?}");
+                    log::error!(
+                        "[btleplug] get_env: attach_current_thread_permanently failed: {e2:?}"
+                    );
                     Err(e2)
                 }
             }

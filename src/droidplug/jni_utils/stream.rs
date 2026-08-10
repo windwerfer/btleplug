@@ -53,14 +53,12 @@ impl<'a: 'b, 'b> JStream<'a, 'b> {
         // first so call_method_unchecked doesn't fail immediately.
         self.clear_java_exception();
 
-        let result = self
-            .env
-            .call_method_unchecked(
-                self.internal,
-                self.poll_next,
-                JavaType::Object("io/github/gedgygedgy/rust/task/PollResult".to_string()),
-                &[waker.into()],
-            );
+        let result = self.env.call_method_unchecked(
+            self.internal,
+            self.poll_next,
+            JavaType::Object("io/github/gedgygedgy/rust/task/PollResult".to_string()),
+            &[waker.into()],
+        );
         let result = match result {
             Ok(r) => r,
             Err(e) => {
