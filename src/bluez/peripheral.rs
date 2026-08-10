@@ -141,6 +141,7 @@ impl api::Peripheral for Peripheral {
     fn mtu(&self) -> u16 {
         let services = self.services.lock().unwrap();
         for (_, service) in services.iter() {
+            #[allow(clippy::never_loop)]
             for (_, characteristic) in service.characteristics.iter() {
                 return characteristic.info.mtu.unwrap();
             }

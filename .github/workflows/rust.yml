@@ -75,11 +75,7 @@ jobs:
         if: ${{ matrix.target != 'android' }}
         run: cargo test --all
       - name: Run clippy
-        uses: actions-rs/clippy-check@v1
-        with:
-          name: clippy ${{ matrix.os }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: --all-features
+        run: cargo clippy --all-features
 
   format:
     runs-on: ubuntu-latest
