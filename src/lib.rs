@@ -100,6 +100,7 @@ mod corebluetooth;
 mod droidplug;
 #[cfg(all(not(target_os = "android"), feature = "jni-host-tests"))]
 mod droidplug {
+    mod jni;
     mod jni_utils;
 }
 pub mod platform;
