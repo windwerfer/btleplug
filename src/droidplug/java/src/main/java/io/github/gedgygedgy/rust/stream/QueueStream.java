@@ -28,7 +28,8 @@ public class QueueStream<T> implements Stream<T> {
         Waker oldWaker = null;
         synchronized (this.lock) {
             if (!this.result.isEmpty()) {
-                result = () -> () -> this.result.remove();
+                T value = this.result.remove();
+                result = () -> () -> value;
             } else if (this.finished) {
                 result = () -> null;
             } else {

@@ -1,3 +1,14 @@
+# Fork note (windwerfer `muse-0.13.4`)
+
+Based on upstream 0.13.4. The only local change is `QueueStream.pollNext`:
+the queued item is removed inside the monitor, and the returned lambda
+hands back that value. Upstream left `remove()` in the lambda, so it ran
+unsynchronized against `add()` on the binder thread.
+
+Upstream 0.13.3 already makes `FnAdapter` wake/close race-free, and the
+0.13.0 move to `jni` 0.22 attaches detached threads and clears pending
+exceptions. Those older fork patches are not re-applied.
+
 # 0.13.4 (2026-10-03)
 
 ## Behavior Changes
